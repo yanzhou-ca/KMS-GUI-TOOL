@@ -10,14 +10,6 @@ exit /b
 
 .DESCRIPTION
     This tool provides a polished, responsive, and robust graphical interface for IT professionals to perform KMS activation.
-    The UI is fully asynchronous, preventing any freezing or "Not Responding" states during operation. Products are neatly
-    categorized into 'Windows' and 'Office' tabs for easy navigation, and the layout is fully resizable, including the
-    activation log panel.
-
-    The script features advanced feedback mechanisms, including a progress bar and status updates, along with intelligent
-    error handling for common activation issues. It is built with best practices in mind, including resource management to
-    prevent memory leaks and optimized code for performance and stability.
-
     Administrative privileges are required to execute the necessary 'slmgr.vbs' commands.
 
 .AUTHOR
@@ -296,7 +288,20 @@ function Initialize-WindowsTreeView {
         $categoryItem.IsExpanded = $false
         $categoryItem.FontWeight = 'Bold'
         
-        foreach ($product in $group.Group) {
+        # 🔁 Reverse order: newest first
+        $productsInOrder = $group.Group | Sort-Object { 
+            # Extract year numerically for sorting (2025 > 2022 > 2019 > ...)
+            if ($_.Category -match '(\d{4})') { -[int]$matches[1] }  # negative for descending
+            elseif ($_.Category -like '*11*') { -2021 }
+            elseif ($_.Category -like '*10*') { -2015 }
+            elseif ($_.Category -like '*8.1*') { -2013 }
+            elseif ($_.Category -like '*8*') { -2012 }
+            elseif ($_.Category -like '*7*') { -2009 }
+            elseif ($_.Category -like '*Vista*') { -2006 }
+            else { 0 }
+        }
+
+        foreach ($product in $productsInOrder) {
             $productItem = New-Object System.Windows.Controls.TreeViewItem
             $productItem.Header = $product.DisplayName
             $productItem.Tag = $product
@@ -318,7 +323,19 @@ function Initialize-OfficeTreeView {
         $categoryItem.IsExpanded = $false
         $categoryItem.FontWeight = 'Bold'
         
-        foreach ($product in $group.Group) {
+        # 🔁 Reverse order: newest first
+        $productsInOrder = $group.Group | Sort-Object { 
+            if ($_.Category -match '(\d{4})') { -[int]$matches[1] }
+            elseif ($_.Category -like '*LTSC 2024*') { -2024 }
+            elseif ($_.Category -like '*LTSC 2021*') { -2021 }
+            elseif ($_.Category -like '*2019*') { -2019 }
+            elseif ($_.Category -like '*2016*') { -2016 }
+            elseif ($_.Category -like '*2013*') { -2013 }
+            elseif ($_.Category -like '*2010*') { -2010 }
+            else { 0 }
+        }
+
+        foreach ($product in $productsInOrder) {
             $productItem = New-Object System.Windows.Controls.TreeViewItem
             $productItem.Header = $product.DisplayName
             $productItem.Tag = $product
@@ -662,43 +679,78 @@ function Add-LogEntry {
 }
 #endregion Event Handlers
 
-#region 5. Data Storage
+#region 4. Data Storage
 function Get-GvlkData {
     <#
     .SYNOPSIS
         Provides a comprehensive list of products and their corresponding Generic Volume License Keys (GVLKs).
     .DESCRIPTION
-        This function acts as the central data store for the application. It returns a static array of PSCustomObjects,
-        where each object represents a Microsoft product. The object includes the product's display name, its GVLK,
-        and a category for UI grouping. This data is sourced directly from Microsoft's official documentation.
+        Products are ordered from newest to oldest within each major family (Windows Server, Windows Client, Office).
     .OUTPUTS
         An array of PSCustomObjects, each containing Category, DisplayName, and Gvlk properties.
     #>
     
     return @(
-        #region Office 2010
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Professional Plus'; Gvlk = 'VYBBJ-TRJPB-QFQRF-QFT4D-H3GVB' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Standard'; Gvlk = 'V7QKV-4XVVR-XYV4D-F7DFM-8R6BM' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Home and Business'; Gvlk = 'D6QFG-VBYP2-XQHM7-J97RH-VVRCK' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Access'; Gvlk = 'V7Y44-9T38C-R2VJK-666HK-T7DDX' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Excel'; Gvlk = 'H62QG-HXVKF-PP4HP-66KMR-CW9BM' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'InfoPath'; Gvlk = 'K96W8-67RPQ-62T9Y-J8FQJ-BT37T' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'OneNote'; Gvlk = 'Q4Y4M-RHWJM-PY37F-MTKWH-D3XHX' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Outlook'; Gvlk = '7YDC2-CWM8M-RRTJC-8MDVC-X3DWQ' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'PowerPoint'; Gvlk = 'RC8FX-88JRY-3PF7C-X8P67-P4VTT' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Project Professional'; Gvlk = 'YGX6F-PGV49-PGW3J-9BTGG-VHKC6' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Project Standard'; Gvlk = '4HP3K-88W3F-W2K3D-6677X-F9PGB' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Publisher'; Gvlk = 'BFK7F-9MYHM-V68C7-DRQ66-83YTP' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'SharePoint Workspace'; Gvlk = 'QYYW6-QP4CB-MBV6G-HYMCJ-4T3J4' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Visio Premium'; Gvlk = 'D9DWC-HPYVV-JGF4P-BTWQB-WX8BJ' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Visio Professional'; Gvlk = '7MCW8-VRQVK-G677T-PDJCM-Q8TCP' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Visio Standard'; Gvlk = '767HD-QGMWX-8QTDB-9G3R2-KHFGJ' }
-        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Word'; Gvlk = 'HVHB3-C6FV7-KQX9W-YQG79-CRY7T' }
-        #endregion Office 2010
+        #region Office LTSC 2024 (Newest Office)
+        [PSCustomObject]@{ Category = 'Office LTSC 2024'; DisplayName = 'Professional Plus'; Gvlk = 'XJ2XN-FW8RK-P4HMP-DKDBV-GCVGB' }
+        #endregion Office LTSC 2024
+
+        #region Office LTSC 2021
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Professional Plus'; Gvlk = 'FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Standard'; Gvlk = 'KDX7X-BNVR8-TXXGX-4Q7Y8-78VT3' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Project Professional'; Gvlk = 'FTNWT-C6WBT-8HMGF-K9PRX-QV9H8' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Project Standard'; Gvlk = 'J2JDC-NJCYY-9RGQ4-YXWMH-T3D4T' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Visio LTSC Professional'; Gvlk = 'KNH8D-FGHT4-T8RK3-CTDYJ-K2HT4' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Visio LTSC Standard'; Gvlk = 'MJVNY-BYWPY-CWV6J-2RKRT-4M8QG' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Access'; Gvlk = 'WM8YG-YNGDD-4JHDC-PG3F4-FC4T4' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Excel'; Gvlk = 'NWG3X-87C9K-TC7YY-BC2G7-G6RVC' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Outlook'; Gvlk = 'C9FM6-3N72F-HFJXB-TM3V9-T86R9' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'PowerPoint'; Gvlk = 'TY7XF-NFRBR-KJ44C-G83KF-GX27K' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Publisher'; Gvlk = '2MW9D-N4BXM-9VBPG-Q7W6M-KFBGQ' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Skype for Business'; Gvlk = 'HWCXN-K3WBT-WJBKY-R8BD9-XK29P' }
+        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Word'; Gvlk = 'TN8H9-M34D3-Y64V9-TR72V-X79KV' }
+        #endregion Office LTSC 2021
+
+        #region Office 2019
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Professional Plus'; Gvlk = 'NMMKJ-6RK4F-KMJVX-8D9MJ-6MWKP' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Standard'; Gvlk = '6NWWJ-YQWMR-QKGCB-6TMB3-9D9HK' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Project Professional'; Gvlk = 'B4NPR-3FKK7-T2MBV-FRQ4W-PKD2B' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Project Standard'; Gvlk = 'C4F7P-NCP8C-6CQPT-MQHV9-JXD2M' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Visio Professional'; Gvlk = '9BGNQ-K37YR-RQHF2-38RQ3-7VCBB' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Visio Standard'; Gvlk = '7TQNQ-K3YQQ-3PFH7-CCPPM-X4VQ2' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Access'; Gvlk = '9N9PT-27V4Y-VJ2PD-YXFMF-YTFQT' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Excel'; Gvlk = 'TMJWT-YYNMB-3BKTF-644FC-RVXBD' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Outlook'; Gvlk = '7HD7K-N4PVK-BHBCQ-YWQRW-XW4VK' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'PowerPoint'; Gvlk = 'RRNCX-C64HY-W2MM7-MCH9G-TJHMQ' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Publisher'; Gvlk = 'G2KWX-3NW6P-PY93R-JXK2T-C9Y9V' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Skype for Business'; Gvlk = 'NCJ33-JHBBY-HTK98-MYCV8-HMKHJ' }
+        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Word'; Gvlk = 'PBX3G-NWMT6-Q7XBW-PYJGG-WXD33' }
+        #endregion Office 2019
+
+        #region Office 2016
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Professional Plus'; Gvlk = 'XQNVK-8JYDB-WJ9W3-YJ8YR-WFG99' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Standard'; Gvlk = 'JNRGM-WHDWX-FJJG3-K47QV-DRTFM' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Project Professional'; Gvlk = 'YG9NW-3K39V-2T3HJ-93F3Q-G83KT' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Project Standard'; Gvlk = 'GNFHQ-F6YQM-KQDGJ-327XX-KQBVC' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Visio Professional'; Gvlk = 'PD3PC-RHNGV-FXJ29-8JK7D-RJRJK' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Visio Standard'; Gvlk = '7WHWN-4T7MP-G96JF-G33KR-W8GF4' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Access'; Gvlk = 'GNH9Y-D2J4T-FJHGG-QRVH7-QPFDW' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Excel'; Gvlk = '9C2PK-NWTVB-JMPW8-BFT28-7FTBF' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'OneNote'; Gvlk = 'DR92N-9HTF2-97XKM-XW2WJ-XW3J6' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Outlook'; Gvlk = 'R69KK-NTPKF-7M3Q4-QYBHW-6MT9B' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'PowerPoint'; Gvlk = 'J7MQP-HNJ4Y-WJ7YM-PFYGF-BY6C6' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Publisher'; Gvlk = 'F47MM-N3XJP-TQXJ9-BP99D-8837K' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Skype for Business'; Gvlk = '869NQ-FJ69K-466HW-QYCP2-DDBV6' }
+        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Word'; Gvlk = 'WXY84-JN2Q9-RBCCQ-3Q3J3-3PFJ6' }
+        #endregion Office 2016
 
         #region Office 2013
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Professional Plus'; Gvlk = 'YC7DK-G2NP3-2QQC3-J6H88-GVGXT' }
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Standard'; Gvlk = 'KBKQT-2NMXY-JJWGP-M62JB-92CD4' }
+        [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Project Professional'; Gvlk = 'FN8TT-7WMH6-2D4X9-M337T-2342K' }
+        [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Project Standard'; Gvlk = '6NTH3-CW976-3G3Y2-JK3TX-8QHTT' }
+        [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Visio Professional'; Gvlk = 'C2FG9-N6J68-H8BTJ-BW3QX-RM3B3' }
+        [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Visio Standard'; Gvlk = 'J484Y-4NKBF-W2HMG-DBMJC-PGWR7' }
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Access'; Gvlk = 'NG2JY-H4JBT-HQXYP-78QH9-4JM2D' }
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Excel'; Gvlk = 'VGPNG-Y7HQW-9RHP7-TKPV3-BG7GB' }
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'InfoPath'; Gvlk = 'DKT8B-N7VXH-D963P-Q4PHY-F8894' }
@@ -706,73 +758,73 @@ function Get-GvlkData {
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'OneNote'; Gvlk = 'TGN6P-8MMBC-37P2F-XHXXK-P34VW' }
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Outlook'; Gvlk = 'QPN8Q-BJBTJ-334K3-93TGY-2PMBT' }
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'PowerPoint'; Gvlk = '4NT99-8RJFH-Q2VDH-KYG2C-4RD4F' }
-        [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Project Professional'; Gvlk = 'FN8TT-7WMH6-2D4X9-M337T-2342K' }
-        [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Project Standard'; Gvlk = '6NTH3-CW976-3G3Y2-JK3TX-8QHTT' }
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Publisher'; Gvlk = 'PN2WF-29XG2-T9HJ7-JQPJR-FCXK4' }
-        [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Visio Professional'; Gvlk = 'C2FG9-N6J68-H8BTJ-BW3QX-RM3B3' }
-        [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Visio Standard'; Gvlk = 'J484Y-4NKBF-W2HMG-DBMJC-PGWR7' }
         [PSCustomObject]@{ Category = 'Office 2013'; DisplayName = 'Word'; Gvlk = '6Q7VD-NX8JD-WJ2VH-88V73-4GBJ7' }
         #endregion Office 2013
 
-        #region Office 2016
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Professional Plus'; Gvlk = 'XQNVK-8JYDB-WJ9W3-YJ8YR-WFG99' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Standard'; Gvlk = 'JNRGM-WHDWX-FJJG3-K47QV-DRTFM' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Access'; Gvlk = 'GNH9Y-D2J4T-FJHGG-QRVH7-QPFDW' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Excel'; Gvlk = '9C2PK-NWTVB-JMPW8-BFT28-7FTBF' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'OneNote'; Gvlk = 'DR92N-9HTF2-97XKM-XW2WJ-XW3J6' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Outlook'; Gvlk = 'R69KK-NTPKF-7M3Q4-QYBHW-6MT9B' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'PowerPoint'; Gvlk = 'J7MQP-HNJ4Y-WJ7YM-PFYGF-BY6C6' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Project Professional'; Gvlk = 'YG9NW-3K39V-2T3HJ-93F3Q-G83KT' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Project Standard'; Gvlk = 'GNFHQ-F6YQM-KQDGJ-327XX-KQBVC' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Publisher'; Gvlk = 'F47MM-N3XJP-TQXJ9-BP99D-8837K' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Skype for Business'; Gvlk = '869NQ-FJ69K-466HW-QYCP2-DDBV6' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Visio Professional'; Gvlk = 'PD3PC-RHNGV-FXJ29-8JK7D-RJRJK' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Visio Standard'; Gvlk = '7WHWN-4T7MP-G96JF-G33KR-W8GF4' }
-        [PSCustomObject]@{ Category = 'Office 2016'; DisplayName = 'Word'; Gvlk = 'WXY84-JN2Q9-RBCCQ-3Q3J3-3PFJ6' }
-        #endregion Office 2016
+        #region Office 2010
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Professional Plus'; Gvlk = 'VYBBJ-TRJPB-QFQRF-QFT4D-H3GVB' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Standard'; Gvlk = 'V7QKV-4XVVR-XYV4D-F7DFM-8R6BM' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Home and Business'; Gvlk = 'D6QFG-VBYP2-XQHM7-J97RH-VVRCK' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Project Professional'; Gvlk = 'YGX6F-PGV49-PGW3J-9BTGG-VHKC6' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Project Standard'; Gvlk = '4HP3K-88W3F-W2K3D-6677X-F9PGB' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Visio Premium'; Gvlk = 'D9DWC-HPYVV-JGF4P-BTWQB-WX8BJ' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Visio Professional'; Gvlk = '7MCW8-VRQVK-G677T-PDJCM-Q8TCP' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Visio Standard'; Gvlk = '767HD-QGMWX-8QTDB-9G3R2-KHFGJ' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Access'; Gvlk = 'V7Y44-9T38C-R2VJK-666HK-T7DDX' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Excel'; Gvlk = 'H62QG-HXVKF-PP4HP-66KMR-CW9BM' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'InfoPath'; Gvlk = 'K96W8-67RPQ-62T9Y-J8FQJ-BT37T' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'OneNote'; Gvlk = 'Q4Y4M-RHWJM-PY37F-MTKWH-D3XHX' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Outlook'; Gvlk = '7YDC2-CWM8M-RRTJC-8MDVC-X3DWQ' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'PowerPoint'; Gvlk = 'RC8FX-88JRY-3PF7C-X8P67-P4VTT' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Publisher'; Gvlk = 'BFK7F-9MYHM-V68C7-DRQ66-83YTP' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'SharePoint Workspace'; Gvlk = 'QYYW6-QP4CB-MBV6G-HYMCJ-4T3J4' }
+        [PSCustomObject]@{ Category = 'Office 2010'; DisplayName = 'Word'; Gvlk = 'HVHB3-C6FV7-KQX9W-YQG79-CRY7T' }
+        #endregion Office 2010
 
-        #region Office 2019
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Professional Plus'; Gvlk = 'NMMKJ-6RK4F-KMJVX-8D9MJ-6MWKP' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Standard'; Gvlk = '6NWWJ-YQWMR-QKGCB-6TMB3-9D9HK' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Access'; Gvlk = '9N9PT-27V4Y-VJ2PD-YXFMF-YTFQT' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Excel'; Gvlk = 'TMJWT-YYNMB-3BKTF-644FC-RVXBD' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Outlook'; Gvlk = '7HD7K-N4PVK-BHBCQ-YWQRW-XW4VK' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'PowerPoint'; Gvlk = 'RRNCX-C64HY-W2MM7-MCH9G-TJHMQ' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Project Professional'; Gvlk = 'B4NPR-3FKK7-T2MBV-FRQ4W-PKD2B' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Project Standard'; Gvlk = 'C4F7P-NCP8C-6CQPT-MQHV9-JXD2M' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Publisher'; Gvlk = 'G2KWX-3NW6P-PY93R-JXK2T-C9Y9V' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Skype for Business'; Gvlk = 'NCJ33-JHBBY-HTK98-MYCV8-HMKHJ' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Visio Professional'; Gvlk = '9BGNQ-K37YR-RQHF2-38RQ3-7VCBB' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Visio Standard'; Gvlk = '7TQNQ-K3YQQ-3PFH7-CCPPM-X4VQ2' }
-        [PSCustomObject]@{ Category = 'Office 2019'; DisplayName = 'Word'; Gvlk = 'PBX3G-NWMT6-Q7XBW-PYJGG-WXD33' }
-        #endregion Office 2019
+        #region Windows 11 (Newest Windows Client)
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Enterprise G'; Gvlk = 'YYVX9-NTFWV-6MDM3-9PT4T-4M68B' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Enterprise G N'; Gvlk = '44RPN-FTY23-9VTTB-MP9BX-T84FV' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Enterprise'; Gvlk = 'NPPR9-FWDCX-D2C8J-H872K-2YT43' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Enterprise N'; Gvlk = 'DPH2V-TTNVB-4X9Q3-TJR4H-KHJW4' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro for Workstations'; Gvlk = 'NRG8B-VKK3Q-CXVCJ-9G2XF-6Q84J' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro for Workstations N'; Gvlk = '9FNHH-K3HBT-3W4TD-6383H-6XYWF' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro'; Gvlk = 'W269N-WFGWX-YVC9B-4J6C9-T83GX' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro N'; Gvlk = 'MH37W-N47XK-V7XM9-C7227-GCQG9' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Education'; Gvlk = 'NW6C2-QMPVW-D7KKK-3GKT6-VCFB2' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Education N'; Gvlk = '2WH4N-8QGBV-H22JP-CT43Q-MDWWJ' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro Education'; Gvlk = '6TP4R-GNPTD-KYYHQ-7B7DP-J447Y' }
+        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro Education N'; Gvlk = 'YVWGF-BXNMC-HTQYQ-CPQ99-66QFC' }
+        #endregion Windows 11
 
-        #region Office LTSC 2021
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Professional Plus'; Gvlk = 'FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Standard'; Gvlk = 'KDX7X-BNVR8-TXXGX-4Q7Y8-78VT3' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Access'; Gvlk = 'WM8YG-YNGDD-4JHDC-PG3F4-FC4T4' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Excel'; Gvlk = 'NWG3X-87C9K-TC7YY-BC2G7-G6RVC' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Outlook'; Gvlk = 'C9FM6-3N72F-HFJXB-TM3V9-T86R9' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'PowerPoint'; Gvlk = 'TY7XF-NFRBR-KJ44C-G83KF-GX27K' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Project Professional'; Gvlk = 'FTNWT-C6WBT-8HMGF-K9PRX-QV9H8' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Project Standard'; Gvlk = 'J2JDC-NJCYY-9RGQ4-YXWMH-T3D4T' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Publisher'; Gvlk = '2MW9D-N4BXM-9VBPG-Q7W6M-KFBGQ' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Skype for Business'; Gvlk = 'HWCXN-K3WBT-WJBKY-R8BD9-XK29P' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Visio LTSC Professional'; Gvlk = 'KNH8D-FGHT4-T8RK3-CTDYJ-K2HT4' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Visio LTSC Standard'; Gvlk = 'MJVNY-BYWPY-CWV6J-2RKRT-4M8QG' }
-        [PSCustomObject]@{ Category = 'Office LTSC 2021'; DisplayName = 'Word'; Gvlk = 'TN8H9-M34D3-Y64V9-TR72V-X79KV' }
-        #endregion Office LTSC 2021
+        #region Windows 10
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise 2016 LTSB'; Gvlk = 'DCPHK-NFMTC-H88MJ-PFHPY-QJ4BJ' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise 2016 LTSB N'; Gvlk = 'QFFDN-GRT3P-VKWWX-X7T3R-8B639' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise 2015 LTSB'; Gvlk = 'WNMTR-4C88C-JK8YV-HQ7T2-76DF9' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise 2015 LTSB N'; Gvlk = '2F77B-TNFGY-69QQF-B8YKP-D69TJ' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise'; Gvlk = 'NPPR9-FWDCX-D2C8J-H872K-2YT43' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise N'; Gvlk = 'DPH2V-TTNVB-4X9Q3-TJR4H-KHJW4' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Pro for Workstations'; Gvlk = 'NRG8B-VKK3Q-CXVCJ-9G2XF-6Q84J' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Pro for Workstations N'; Gvlk = '9FNHH-K3HBT-3W4TD-6383H-6XYWF' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Professional'; Gvlk = 'W269N-WFGWX-YVC9B-4J6C9-T83GX' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Professional N'; Gvlk = 'MH37W-N47XK-V7XM9-C7227-GCQG9' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Education'; Gvlk = 'NW6C2-QMPVW-D7KKK-3GKT6-VCFB2' }
+        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Education N'; Gvlk = '2WH4N-8QGBV-H22JP-CT43Q-MDWWJ' }
+        #endregion Windows 10
 
-        #region Office LTSC 2024  <-- RESTORED
-        [PSCustomObject]@{ Category = 'Office LTSC 2024'; DisplayName = 'Professional Plus'; Gvlk = 'XJ2XN-FW8RK-P4HMP-DKDBV-GCVGB' }
-        #endregion Office LTSC 2024
+        #region Windows 8.1
+        [PSCustomObject]@{ Category = 'Windows 8.1'; DisplayName = 'Enterprise'; Gvlk = 'MHF9N-XY6XB-WVXMC-BTDCT-MKKG7' }
+        [PSCustomObject]@{ Category = 'Windows 8.1'; DisplayName = 'Enterprise N'; Gvlk = 'TT4HM-HN7YT-62K67-RGRQJ-JFFXW' }
+        [PSCustomObject]@{ Category = 'Windows 8.1'; DisplayName = 'Professional'; Gvlk = 'GCRJD-8NW9H-F2CDX-CCM8D-9D6T9' }
+        [PSCustomObject]@{ Category = 'Windows 8.1'; DisplayName = 'Professional N'; Gvlk = 'HMCNV-VVBFX-7HMBH-CTY9B-B4FXY' }
+        #endregion Windows 8.1
 
-        #region Windows Vista
-        [PSCustomObject]@{ Category = 'Windows Vista'; DisplayName = 'Enterprise'; Gvlk = 'VKK3X-68KWM-X2YGT-QR4M6-4BWMV' }
-        [PSCustomObject]@{ Category = 'Windows Vista'; DisplayName = 'Enterprise N'; Gvlk = 'VTC42-BM838-43QHV-84HX6-XJXKV' }
-        [PSCustomObject]@{ Category = 'Windows Vista'; DisplayName = 'Business'; Gvlk = 'YFKBB-PQJJV-G996G-VWGXY-2V3X8' }
-        [PSCustomObject]@{ Category = 'Windows Vista'; DisplayName = 'Business N'; Gvlk = 'HMBQG-8H2RH-C77VX-27R82-VMQBT' }
-        #endregion Windows Vista
+        #region Windows 8
+        [PSCustomObject]@{ Category = 'Windows 8'; DisplayName = 'Enterprise'; Gvlk = '32JNW-9KQ84-P47T8-D8GGY-CWCK7' }
+        [PSCustomObject]@{ Category = 'Windows 8'; DisplayName = 'Enterprise N'; Gvlk = 'JMNMF-RHW7P-DMY6X-RF3DR-X2BQT' }
+        [PSCustomObject]@{ Category = 'Windows 8'; DisplayName = 'Professional'; Gvlk = 'NG4HW-VH26C-733KW-K6F98-J8CK4' }
+        [PSCustomObject]@{ Category = 'Windows 8'; DisplayName = 'Professional N'; Gvlk = 'XCVCF-2NXM9-723PB-MHCB7-2RYQQ' }
+        #endregion Windows 8
 
         #region Windows 7
         [PSCustomObject]@{ Category = 'Windows 7'; DisplayName = 'Enterprise'; Gvlk = '33PXH-7Y6KF-2VJC9-XBBR8-HVTHH' }
@@ -783,49 +835,61 @@ function Get-GvlkData {
         [PSCustomObject]@{ Category = 'Windows 7'; DisplayName = 'Professional E'; Gvlk = 'W82YF-2Q76Y-63HXB-FGJG9-GF7QX' }
         #endregion Windows 7
 
-        #region Windows 8
-        [PSCustomObject]@{ Category = 'Windows 8'; DisplayName = 'Enterprise'; Gvlk = '32JNW-9KQ84-P47T8-D8GGY-CWCK7' }
-        [PSCustomObject]@{ Category = 'Windows 8'; DisplayName = 'Enterprise N'; Gvlk = 'JMNMF-RHW7P-DMY6X-RF3DR-X2BQT' }
-        [PSCustomObject]@{ Category = 'Windows 8'; DisplayName = 'Professional'; Gvlk = 'NG4HW-VH26C-733KW-K6F98-J8CK4' }
-        [PSCustomObject]@{ Category = 'Windows 8'; DisplayName = 'Professional N'; Gvlk = 'XCVCF-2NXM9-723PB-MHCB7-2RYQQ' }
-        #endregion Windows 8
+        #region Windows Vista
+        [PSCustomObject]@{ Category = 'Windows Vista'; DisplayName = 'Enterprise'; Gvlk = 'VKK3X-68KWM-X2YGT-QR4M6-4BWMV' }
+        [PSCustomObject]@{ Category = 'Windows Vista'; DisplayName = 'Enterprise N'; Gvlk = 'VTC42-BM838-43QHV-84HX6-XJXKV' }
+        [PSCustomObject]@{ Category = 'Windows Vista'; DisplayName = 'Business'; Gvlk = 'YFKBB-PQJJV-G996G-VWGXY-2V3X8' }
+        [PSCustomObject]@{ Category = 'Windows Vista'; DisplayName = 'Business N'; Gvlk = 'HMBQG-8H2RH-C77VX-27R82-VMQBT' }
+        #endregion Windows Vista
 
-        #region Windows 8.1
-        [PSCustomObject]@{ Category = 'Windows 8.1'; DisplayName = 'Enterprise'; Gvlk = 'MHF9N-XY6XB-WVXMC-BTDCT-MKKG7' }
-        [PSCustomObject]@{ Category = 'Windows 8.1'; DisplayName = 'Enterprise N'; Gvlk = 'TT4HM-HN7YT-62K67-RGRQJ-JFFXW' }
-        [PSCustomObject]@{ Category = 'Windows 8.1'; DisplayName = 'Professional'; Gvlk = 'GCRJD-8NW9H-F2CDX-CCM8D-9D6T9' }
-        [PSCustomObject]@{ Category = 'Windows 8.1'; DisplayName = 'Professional N'; Gvlk = 'HMCNV-VVBFX-7HMBH-CTY9B-B4FXY' }
-        #endregion Windows 8.1
+        #region Windows Server 2025 (Newest Server)
+        [PSCustomObject]@{ Category = 'Windows Server 2025'; DisplayName = 'Datacenter'; Gvlk = 'D764K-2NDRG-47T6Q-P8T8W-YP6DF' }
+        [PSCustomObject]@{ Category = 'Windows Server 2025'; DisplayName = 'Standard'; Gvlk = 'TVRH6-WHNXV-R9WG3-9XRFY-MY832' }
+        [PSCustomObject]@{ Category = 'Windows Server 2025'; DisplayName = 'Azure Edition'; Gvlk = 'XGN3F-F394H-FD2MY-PP6FD-8MCRC' }
+        #endregion Windows Server 2025
 
-        #region Windows 10
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise'; Gvlk = 'NPPR9-FWDCX-D2C8J-H872K-2YT43' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise N'; Gvlk = 'DPH2V-TTNVB-4X9Q3-TJR4H-KHJW4' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise 2015 LTSB'; Gvlk = 'WNMTR-4C88C-JK8YV-HQ7T2-76DF9' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise 2015 LTSB N'; Gvlk = '2F77B-TNFGY-69QQF-B8YKP-D69TJ' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise 2016 LTSB'; Gvlk = 'DCPHK-NFMTC-H88MJ-PFHPY-QJ4BJ' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Enterprise 2016 LTSB N'; Gvlk = 'QFFDN-GRT3P-VKWWX-X7T3R-8B639' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Education'; Gvlk = 'NW6C2-QMPVW-D7KKK-3GKT6-VCFB2' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Education N'; Gvlk = '2WH4N-8QGBV-H22JP-CT43Q-MDWWJ' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Professional'; Gvlk = 'W269N-WFGWX-YVC9B-4J6C9-T83GX' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Professional N'; Gvlk = 'MH37W-N47XK-V7XM9-C7227-GCQG9' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Pro for Workstations'; Gvlk = 'NRG8B-VKK3Q-CXVCJ-9G2XF-6Q84J' }
-        [PSCustomObject]@{ Category = 'Windows 10'; DisplayName = 'Pro for Workstations N'; Gvlk = '9FNHH-K3HBT-3W4TD-6383H-6XYWF' }
-        #endregion Windows 10
+        #region Windows Server 2022
+        [PSCustomObject]@{ Category = 'Windows Server 2022'; DisplayName = 'Datacenter'; Gvlk = 'WX4NM-KYWYW-QJJR4-XV3QB-6VM33' }
+        [PSCustomObject]@{ Category = 'Windows Server 2022'; DisplayName = 'Datacenter: Azure Edition'; Gvlk = 'NTBV8-9K7Q8-V27C6-M2BTV-KHMXV' }
+        [PSCustomObject]@{ Category = 'Windows Server 2022'; DisplayName = 'Standard'; Gvlk = 'VDYBN-27WPP-V4HQT-9VMD4-VMK7H' }
+        #endregion Windows Server 2022
 
-        #region Windows 11
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Enterprise'; Gvlk = 'NPPR9-FWDCX-D2C8J-H872K-2YT43' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Enterprise N'; Gvlk = 'DPH2V-TTNVB-4X9Q3-TJR4H-KHJW4' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Enterprise G'; Gvlk = 'YYVX9-NTFWV-6MDM3-9PT4T-4M68B' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Enterprise G N'; Gvlk = '44RPN-FTY23-9VTTB-MP9BX-T84FV' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Education'; Gvlk = 'NW6C2-QMPVW-D7KKK-3GKT6-VCFB2' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Education N'; Gvlk = '2WH4N-8QGBV-H22JP-CT43Q-MDWWJ' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro'; Gvlk = 'W269N-WFGWX-YVC9B-4J6C9-T83GX' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro N'; Gvlk = 'MH37W-N47XK-V7XM9-C7227-GCQG9' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro for Workstations'; Gvlk = 'NRG8B-VKK3Q-CXVCJ-9G2XF-6Q84J' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro for Workstations N'; Gvlk = '9FNHH-K3HBT-3W4TD-6383H-6XYWF' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro Education'; Gvlk = '6TP4R-GNPTD-KYYHQ-7B7DP-J447Y' }
-        [PSCustomObject]@{ Category = 'Windows 11'; DisplayName = 'Pro Education N'; Gvlk = 'YVWGF-BXNMC-HTQYQ-CPQ99-66QFC' }
-        #endregion Windows 11
+        #region Windows Server 2019
+        [PSCustomObject]@{ Category = 'Windows Server 2019'; DisplayName = 'Datacenter'; Gvlk = 'WMDGN-G9PQG-XVVXX-R3X43-63DFG' }
+        [PSCustomObject]@{ Category = 'Windows Server 2019'; DisplayName = 'Standard'; Gvlk = 'N69G4-B89J2-4G8F4-WWYCC-J464C' }
+        [PSCustomObject]@{ Category = 'Windows Server 2019'; DisplayName = 'Essentials'; Gvlk = 'WVDHN-86M7X-466P6-VHXV7-YY726' }
+        #endregion Windows Server 2019
+
+        #region Windows Server 2016
+        [PSCustomObject]@{ Category = 'Windows Server 2016'; DisplayName = 'Datacenter'; Gvlk = 'CB7KF-BWN84-R7R2Y-793K2-8XDDG' }
+        [PSCustomObject]@{ Category = 'Windows Server 2016'; DisplayName = 'Standard'; Gvlk = 'WC2BQ-8NRM3-FDDYY-2BFGV-KHKQY' }
+        [PSCustomObject]@{ Category = 'Windows Server 2016'; DisplayName = 'Essentials'; Gvlk = 'JCKRF-N37P4-C2D82-9YXRT-4M63B' }
+        #endregion Windows Server 2016
+
+        #region Windows Server 2012 R2
+        [PSCustomObject]@{ Category = 'Windows Server 2012 R2'; DisplayName = 'Datacenter'; Gvlk = 'W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9' }
+        [PSCustomObject]@{ Category = 'Windows Server 2012 R2'; DisplayName = 'Standard'; Gvlk = 'D2N9P-3P6X9-2R39C-7RTCD-MDVJX' }
+        [PSCustomObject]@{ Category = 'Windows Server 2012 R2'; DisplayName = 'Essentials'; Gvlk = 'KNC87-3J2TX-XB4WP-VCPJV-M4FWM' }
+        #endregion Windows Server 2012 R2
+
+        #region Windows Server 2012
+        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'Datacenter'; Gvlk = '48HP8-DN98B-MYWDG-T2DCC-8W83P' }
+        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'Standard'; Gvlk = 'XC9B7-NBPP2-83J2H-RHMBY-92BT4' }
+        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'MultiPoint Premium'; Gvlk = 'XNH6W-2V9GX-RGJ4K-Y8X6F-QGJ2G' }
+        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'MultiPoint Standard'; Gvlk = 'HM7DN-YVMH3-46JC3-XYTG7-CYQJJ' }
+        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'N'; Gvlk = '8N2M2-HWPGY-7PGT9-HGDD8-GVGGY' }
+        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'Single Language'; Gvlk = '2WN2H-YGCQR-KFX6K-CD6TF-84YXQ' }
+        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'Country Specific'; Gvlk = '4K36P-JN4VD-GDC6V-KDT89-DYFKP' }
+        #endregion Windows Server 2012
+
+        #region Windows Server 2008 R2
+        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'Datacenter'; Gvlk = '74YFP-3QFB3-KQT8W-PMXWJ-7M648' }
+        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'Enterprise'; Gvlk = '489J6-VHDMP-X63PK-3K798-CPX3Y' }
+        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'Standard'; Gvlk = 'YC6KT-GKW9T-YTKYR-T4X34-R7VHC' }
+        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'HPC edition'; Gvlk = 'TT8MH-CG224-D3D7Q-498W2-9QCTX' }
+        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'Web'; Gvlk = '6TPJF-RBVHG-WBW2R-86QPH-6RTM4' }
+        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'For Itanium-based Systems'; Gvlk = 'GT63C-RJFQ3-4GMB6-BRFB9-CB83V' }
+        #endregion Windows Server 2008 R2
 
         #region Windows Server 2008
         [PSCustomObject]@{ Category = 'Windows Server 2008'; DisplayName = 'Datacenter'; Gvlk = '7M67G-PC374-GR742-YH8V4-TCBY3' }
@@ -838,70 +902,6 @@ function Get-GvlkData {
         [PSCustomObject]@{ Category = 'Windows Server 2008'; DisplayName = 'Web'; Gvlk = 'WYR28-R7TFJ-3X2YQ-YCY4H-M249D' }
         [PSCustomObject]@{ Category = 'Windows Server 2008'; DisplayName = 'For Itanium-Based Systems'; Gvlk = '4DWFP-JF3DJ-B7DTH-78FJB-PDRHK' }
         #endregion Windows Server 2008
-
-        #region Windows Server 2008 R2
-        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'Datacenter'; Gvlk = '74YFP-3QFB3-KQT8W-PMXWJ-7M648' }
-        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'Enterprise'; Gvlk = '489J6-VHDMP-X63PK-3K798-CPX3Y' }
-        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'Standard'; Gvlk = 'YC6KT-GKW9T-YTKYR-T4X34-R7VHC' }
-        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'Web'; Gvlk = '6TPJF-RBVHG-WBW2R-86QPH-6RTM4' }
-        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'HPC edition'; Gvlk = 'TT8MH-CG224-D3D7Q-498W2-9QCTX' }
-        [PSCustomObject]@{ Category = 'Windows Server 2008 R2'; DisplayName = 'For Itanium-based Systems'; Gvlk = 'GT63C-RJFQ3-4GMB6-BRFB9-CB83V' }
-        #endregion Windows Server 2008 R2
-
-        #region Windows Server 2012
-        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'Datacenter'; Gvlk = '48HP8-DN98B-MYWDG-T2DCC-8W83P' }
-        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'Standard'; Gvlk = 'XC9B7-NBPP2-83J2H-RHMBY-92BT4' }
-        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'N'; Gvlk = '8N2M2-HWPGY-7PGT9-HGDD8-GVGGY' }
-        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'Country Specific'; Gvlk = '4K36P-JN4VD-GDC6V-KDT89-DYFKP' }
-        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'Single Language'; Gvlk = '2WN2H-YGCQR-KFX6K-CD6TF-84YXQ' }
-        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'MultiPoint Standard'; Gvlk = 'HM7DN-YVMH3-46JC3-XYTG7-CYQJJ' }
-        [PSCustomObject]@{ Category = 'Windows Server 2012'; DisplayName = 'MultiPoint Premium'; Gvlk = 'XNH6W-2V9GX-RGJ4K-Y8X6F-QGJ2G' }
-        #endregion Windows Server 2012
-
-        #region Windows Server 2012 R2
-        [PSCustomObject]@{ Category = 'Windows Server 2012 R2'; DisplayName = 'Datacenter'; Gvlk = 'W3GGN-FT8W3-Y4M27-J84CP-Q3VJ9' }
-        [PSCustomObject]@{ Category = 'Windows Server 2012 R2'; DisplayName = 'Standard'; Gvlk = 'D2N9P-3P6X9-2R39C-7RTCD-MDVJX' }
-        [PSCustomObject]@{ Category = 'Windows Server 2012 R2'; DisplayName = 'Essentials'; Gvlk = 'KNC87-3J2TX-XB4WP-VCPJV-M4FWM' }
-        #endregion Windows Server 2012 R2
-
-        #region Windows Server 2016
-        [PSCustomObject]@{ Category = 'Windows Server 2016'; DisplayName = 'Datacenter'; Gvlk = 'CB7KF-BWN84-R7R2Y-793K2-8XDDG' }
-        [PSCustomObject]@{ Category = 'Windows Server 2016'; DisplayName = 'Standard'; Gvlk = 'WC2BQ-8NRM3-FDDYY-2BFGV-KHKQY' }
-        [PSCustomObject]@{ Category = 'Windows Server 2016'; DisplayName = 'Essentials'; Gvlk = 'JCKRF-N37P4-C2D82-9YXRT-4M63B' }
-        #endregion Windows Server 2016
-
-        #region Windows Server 2019
-        [PSCustomObject]@{ Category = 'Windows Server 2019'; DisplayName = 'Datacenter'; Gvlk = 'WMDGN-G9PQG-XVVXX-R3X43-63DFG' }
-        [PSCustomObject]@{ Category = 'Windows Server 2019'; DisplayName = 'Standard'; Gvlk = 'N69G4-B89J2-4G8F4-WWYCC-J464C' }
-        [PSCustomObject]@{ Category = 'Windows Server 2019'; DisplayName = 'Essentials'; Gvlk = 'WVDHN-86M7X-466P6-VHXV7-YY726' }
-        #endregion Windows Server 2019
-
-        #region Windows Server 1709
-        [PSCustomObject]@{ Category = 'Windows Server 1709'; DisplayName = 'Datacenter'; Gvlk = '6Y6KB-N82V8-D8CQV-23MJW-BWTG6' }
-        [PSCustomObject]@{ Category = 'Windows Server 1709'; DisplayName = 'Standard'; Gvlk = 'DPCNP-XQFKJ-BJF7R-FRC8D-GF6G4' }
-        #endregion Windows Server 1709
-
-        #region Windows Server 1803
-        [PSCustomObject]@{ Category = 'Windows Server 1803'; DisplayName = 'Datacenter'; Gvlk = '2HXDN-KRXHB-GPYC7-YCKFJ-7FVDG' }
-        [PSCustomObject]@{ Category = 'Windows Server 1803'; DisplayName = 'Standard'; Gvlk = 'PTXN8-JFHJM-4WC78-MPCBR-9W4KR' }
-        #endregion Windows Server 1803
-
-        #region Windows Server 1809-20H2
-        [PSCustomObject]@{ Category = 'Windows Server 1809-20H2'; DisplayName = 'Datacenter'; Gvlk = '6NMRW-2C8FM-D24W7-TQWMY-CWH2D' }
-        [PSCustomObject]@{ Category = 'Windows Server 1809-20H2'; DisplayName = 'Standard'; Gvlk = 'N2KJX-J94YW-TQVFB-DG9YT-724CC' }
-        #endregion Windows Server 1809-20H2
-
-        #region Windows Server 2022
-        [PSCustomObject]@{ Category = 'Windows Server 2022'; DisplayName = 'Datacenter'; Gvlk = 'WX4NM-KYWYW-QJJR4-XV3QB-6VM33' }
-        [PSCustomObject]@{ Category = 'Windows Server 2022'; DisplayName = 'Datacenter: Azure Edition'; Gvlk = 'NTBV8-9K7Q8-V27C6-M2BTV-KHMXV' }
-        [PSCustomObject]@{ Category = 'Windows Server 2022'; DisplayName = 'Standard'; Gvlk = 'VDYBN-27WPP-V4HQT-9VMD4-VMK7H' }
-        #endregion Windows Server 2022
-
-        #region Windows Server 2025  <-- RESTORED
-        [PSCustomObject]@{ Category = 'Windows Server 2025'; DisplayName = 'Standard'; Gvlk = 'TVRH6-WHNXV-R9WG3-9XRFY-MY832' }
-        [PSCustomObject]@{ Category = 'Windows Server 2025'; DisplayName = 'Datacenter'; Gvlk = 'D764K-2NDRG-47T6Q-P8T8W-YP6DF' }
-        [PSCustomObject]@{ Category = 'Windows Server 2025'; DisplayName = 'Azure Edition'; Gvlk = 'XGN3F-F394H-FD2MY-PP6FD-8MCRC' }
-        #endregion Windows Server 2025
     )
 }
 #endregion Data Storage
